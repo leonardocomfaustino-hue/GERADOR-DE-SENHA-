@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gerador de Senhas</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --accent:#8b5cf6;
+  --accent2:#a78bfa;
+  --bg:#100c1d;
+  --card:#1b142b;
+  --surface:#241a37;
+  --border:#49345f;
+  --text:#fff;
+  --muted:#aaa0b7;
+}
+body{
+  margin:0;min-height:100vh;padding:18px;
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+  color:var(--text);
+  background:radial-gradient(circle at 50% 0%,#2a1a43 0%,var(--bg) 45%,#0c0913 100%);
+  transition:.25s;
+}
+.app{
+  width:min(560px,100%);margin:auto;
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  border:1px solid var(--border);border-radius:24px;
+  padding:20px;box-shadow:0 22px 70px #0009;
+  backdrop-filter:blur(14px);
+}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{font-size:28px;line-height:1.05;margin:0}
+.sub{margin:8px 0 16px;color:#bcb2cb;font-size:16px}
+.savedTop{
+  border:1px solid var(--border);background:var(--surface);color:#fff;
+  border-radius:14px;padding:9px 12px;font-weight:800;white-space:nowrap
+}
+.savedTop span{background:var(--accent);padding:2px 8px;border-radius:99px;margin-left:3px}
+.nav{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:7px;
+  background:#0d0a14;padding:6px;border-radius:16px;margin:10px 0 16px;
+  position:sticky;top:8px;z-index:5
+}
+.nav button{
+  border:0;background:transparent;color:#aaa;padding:11px 5px;
+  border-radius:11px;font-weight:800;font-size:13px
+}
+.nav button.active{background:var(--accent);color:#fff}
+.panel{display:none}.panel.active{display:block}
+
+.password{
+  display:flex;gap:8px;align-items:center;
+  background:#0d0a14;border:1px solid var(--border);
+  border-radius:16px;padding:10px
+}
+#out{
+  flex:1;min-width:0;border:0;outline:0;background:transparent;
+  color:#fff;font-size:20px;font-weight:700
+}
+.copy,.saveSmall,.generate,.modalOption{
+  border:0;border-radius:12px;padding:12px 15px;font-weight:800;cursor:pointer
+}
+.copy{background:var(--accent);color:#fff}
+.saveSmall{
+  width:100%;margin-top:10px;background:var(--surface);
+  color:#fff;border:1px solid var(--border)
+}
+.generate{
+  width:100%;margin-top:14px;background:#fff;color:#17121e;font-size:16px
+}
+label.title{
+  display:flex;justify-content:space-between;margin-top:20px;
+  font-weight:800;font-size:16px
+}
+.range{width:100%;accent-color:var(--accent)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.opt{
+  background:var(--surface);border:1px solid var(--border);
+  padding:14px;border-radius:14px;color:#eee;font-weight:700
+}
+.opt input{accent-color:var(--accent);margin-right:8px;transform:scale(1.15)}
+.meter{height:8px;background:#332544;border-radius:99px;overflow:hidden;margin-top:16px}
+.bar{height:100%;width:100%;background:var(--accent);transition:.2s}
+.hint{font-size:13px;color:var(--muted);line-height:1.5;margin:13px 0 0}
+.section{margin-top:20px;padding-top:16px;border-top:1px solid #342545}
+.sectionTitle{font-weight:900;margin-bottom:10px}
+.quickSizes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.quickSizes button{
+  border:1px solid var(--border);background:var(--surface);color:#eee;
+  border-radius:12px;padding:11px;font-weight:800
+}
+.quickSizes button.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+
+.savedPanel{
+  background:#0d0a14;border:1px solid var(--border);
+  border-radius:16px;padding:14px
+}
+.panelHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.savedItem{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;padding:10px;margin-top:8px
+}
+.savedItem code{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.savedCopy{background:var(--accent);color:#fff;padding:8px 10px}
+.delete{background:#43202a;color:#ffb5c0;padding:8px 10px;border:0;border-radius:10px}
+.empty{color:#aaa;font-size:14px}
+
+.colorCard{
+  background:#0d0a14;border:1px solid var(--border);
+  border-radius:18px;padding:16px
+}
+.colorGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.colorChoice{
+  height:54px;border-radius:14px;border:2px solid transparent;
+  cursor:pointer;position:relative
+}
+.colorChoice.active{border-color:#fff;box-shadow:0 0 0 2px var(--accent)}
+.colorChoice::after{
+  content:"";position:absolute;inset:8px;border-radius:9px;
+  border:1px solid #ffffff33
+}
+.customTitle{margin:20px 0 10px;font-weight:900}
+.wheelWrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.wheel{
+  width:230px;height:230px;border-radius:50%;
+  background:conic-gradient(
+    #ff0000,#ffff00,#00ff00,#00ffff,#0066ff,#7a00ff,#ff00ff,#ff0000
+  );
+  position:relative;touch-action:none;
+  box-shadow:0 0 0 5px #ffffff10,0 12px 35px #0008
+}
+.wheel::before{
+  content:"";position:absolute;inset:31px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0%,#fff 4%,transparent 5%,transparent 100%);
+  opacity:.08
+}
+.wheelDot{
+  width:22px;height:22px;border-radius:50%;
+  border:3px solid #fff;box-shadow:0 2px 8px #0009;
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:var(--accent);pointer-events:none
+}
+.colorPreview{
+  width:100%;height:46px;border-radius:13px;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-weight:900
+}
+.colorInfo{font-size:13px;color:#aaa;text-align:center}
+.reset{
+  width:100%;margin-top:10px;border:1px solid var(--border);
+  background:transparent;color:#aaa;border-radius:12px;padding:10px;font-weight:800
+}
+
+.modal{
+  display:none;position:fixed;inset:0;background:#000b;
+  align-items:center;justify-content:center;padding:18px;z-index:20
+}
+.modalBox{
+  width:min(410px,100%);background:var(--card);
+  border:1px solid var(--border);border-radius:19px;padding:20px;
+  box-shadow:0 25px 70px #000b
+}
+.modalBox h2{margin:0 0 8px}
+.modalBox p{color:#bbb;margin:0 0 12px}
+.modalOption{
+  display:block;width:100%;margin:9px 0;background:var(--surface);
+  color:#fff;text-align:left;border:1px solid var(--border)
+}
+.cancel{
+  width:100%;margin-top:5px;background:transparent;color:#aaa;
+  border:1px solid var(--border);border-radius:12px;padding:10px;font-weight:800
+}
+@media(max-width:430px){
+  body{padding:10px}.app{padding:16px;border-radius:21px}
+  h1{font-size:25px}.savedTop{font-size:12px;padding:8px}
+  .nav button{font-size:12px}
+  .wheel{width:210px;height:210px}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="topbar">
+    <div>
+      <h1>🔐 Gerador de Senhas</h1>
+      <p class="sub">Crie senhas aleatórias e difíceis de adivinhar.</p>
+    </div>
+    <button class="savedTop" id="savedTop">🔒 <span id="savedCount">0</span></button>
+  </div>
+
+  <!-- categorias ficam no topo -->
+  <nav class="nav" aria-label="Categorias">
+    <button class="active" data-tab="generator">🔐 Gerador</button>
+    <button data-tab="saved">🔒 Salvas</button>
+    <button data-tab="colors">🎨 Cores</button>
+  </nav>
+
+  <section class="panel active" id="tab-generator">
+    <div class="password">
+      <input id="out" readonly aria-label="Senha gerada">
+      <button class="copy" id="copy">Copiar</button>
+    </div>
+
+    <button class="saveSmall" id="save">💾 Salvar senha</button>
+
+    <label class="title">Tamanho <span id="len">20</span></label>
+    <input class="range" id="length" type="range" min="8" max="64" value="20">
+
+    <div class="opts">
+      <label class="opt"><span><input id="upper" type="checkbox" checked>Maiúsculas</span></label>
+      <label class="opt"><span><input id="lower" type="checkbox" checked>Minúsculas</span></label>
+      <label class="opt"><span><input id="nums" type="checkbox" checked>Números</span></label>
+      <label class="opt"><span><input id="symbols" type="checkbox" checked>Símbolos</span></label>
+    </div>
+
+    <div class="meter"><div class="bar"></div></div>
+
+    <button class="generate" id="generate">⚡ Gerar nova senha</button>
+
+    <p class="hint">Dica: use uma senha diferente para cada serviço e, quando possível, prefira um gerenciador de senhas.</p>
+
+    <div class="section">
+      <div class="sectionTitle">⚡ Tamanho rápido</div>
+      <div class="quickSizes">
+        <button data-size="12">12</button>
+        <button data-size="20" class="active">20</button>
+        <button data-size="32">32</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-saved">
+    <div class="savedPanel">
+      <div class="panelHead"><strong>🔒 Senhas salvas</strong></div>
+      <div id="savedList"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-colors">
+    <div class="colorCard">
+      <div class="sectionTitle">🎨 Cores rápidas</div>
+      <div class="colorGrid" id="colorGrid"></div>
+
+      <div class="customTitle">🌈 Cor personalizada</div>
+      <div class="wheelWrap">
+        <div class="wheel" id="wheel" aria-label="Seletor de cor">
+          <div class="wheelDot" id="wheelDot"></div>
+        </div>
+        <div class="colorPreview" id="colorPreview">Cor atual</div>
+        <div class="colorInfo">Arraste o pontinho pelo círculo para escolher a cor.</div>
+      </div>
+      <button class="reset" id="resetTheme">↩️ Restaurar cor padrão</button>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="saveModal">
+  <div class="modalBox">
+    <h2>💾 Salvar senha</h2>
+    <p>Escolha como deseja guardar esta senha:</p>
+    <button class="modalOption" id="download">📥 Download da senha</button>
+    <button class="modalOption" id="saveApp">📱 Salvar no app</button>
+    <button class="cancel" id="cancelModal">Cancelar</button>
+  </div>
+</div>
+
+<script>
+const out=document.querySelector('#out');
+const lengthEl=document.querySelector('#length');
+const len=document.querySelector('#len');
+const upper=document.querySelector('#upper');
+const lower=document.querySelector('#lower');
+const nums=document.querySelector('#nums');
+const symbols=document.querySelector('#symbols');
+
+const sets={
+  upper:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower:'abcdefghijklmnopqrstuvwxyz',
+  nums:'0123456789',
+  symbols:'!@#$%^&*()-_=+[]{}:,.?'
+};
+
+function randomInt(max){
+  const a=new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return a[0]%max;
+}
+
+function generate(){
+  let chars='',pool='';
+  if(upper.checked){chars+=sets.upper[randomInt(sets.upper.length)];pool+=sets.upper}
+  if(lower.checked){chars+=sets.lower[randomInt(sets.lower.length)];pool+=sets.lower}
+  if(nums.checked){chars+=sets.nums[randomInt(sets.nums.length)];pool+=sets.nums}
+  if(symbols.checked){chars+=sets.symbols[randomInt(sets.symbols.length)];pool+=sets.symbols}
+  if(!pool){out.value='Selecione uma opção';return}
+  const n=+lengthEl.value;
+  while(chars.length<n) chars+=pool[randomInt(pool.length)];
+  const arr=[...chars];
+  for(let i=arr.length-1;i>0;i--){
+    const j=randomInt(i+1);
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  out.value=arr.join('');
+}
+
+function getSaved(){
+  try{return JSON.parse(localStorage.getItem('strongPasswords')||'[]')}catch{return[]}
+}
+function renderSaved(){
+  const items=getSaved();
+  document.querySelector('#savedCount').textContent=items.length;
+  const list=document.querySelector('#savedList');
+  list.innerHTML=items.length ? items.map((p,i)=>
+    `<div class="savedItem">
+      <code>${p.replaceAll('&','&amp;').replaceAll('<','&lt;')}</code>
+      <button class="savedCopy" data-p="${i}">Copiar</button>
+      <button class="delete" data-d="${i}">🗑️</button>
+    </div>`
+  ).join('') : '<p class="empty">Nenhuma senha salva ainda.</p>';
+
+  list.querySelectorAll('.savedCopy').forEach(b=>{
+    b.onclick=()=>navigator.clipboard.writeText(items[+b.dataset.p]);
+  });
+  list.querySelectorAll('.delete').forEach(b=>{
+    b.onclick=()=>{
+      items.splice(+b.dataset.d,1);
+      localStorage.setItem('strongPasswords',JSON.stringify(items));
+      renderSaved();
+    };
+  });
+}
+
+const saveModal=document.querySelector('#saveModal');
+document.querySelector('#save').onclick=()=>saveModal.style.display='flex';
+document.querySelector('#cancelModal').onclick=()=>saveModal.style.display='none';
+
+document.querySelector('#saveApp').onclick=()=>{
+  if(!out.value || out.value==='Selecione uma opção') return;
+  const items=getSaved();
+  items.unshift(out.value);
+  localStorage.setItem('strongPasswords',JSON.stringify([...new Set(items)]));
+  renderSaved();
+  saveModal.style.display='none';
+};
+
+document.querySelector('#download').onclick=()=>{
+  if(!out.value || out.value==='Selecione uma opção') return;
+  const blob=new Blob([`Senha gerada: ${out.value}\n`],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='senha.txt';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),500);
+  saveModal.style.display='none';
+};
+
+document.querySelector('#savedTop').onclick=()=>{
+  document.querySelector('[data-tab="saved"]').click();
+};
+
+document.querySelector('#copy').onclick=async()=>{
+  if(out.value&&out.value!=='Selecione uma opção'){
+    await navigator.clipboard.writeText(out.value);
+    const b=document.querySelector('#copy');
+    b.textContent='Copiado!';
+    setTimeout(()=>b.textContent='Copiar',1200);
+  }
+};
+
+lengthEl.oninput=()=>{len.textContent=lengthEl.value;generate()};
+[upper,lower,nums,symbols].forEach(x=>x.onchange=generate);
+document.querySelector('#generate').onclick=generate;
+
+document.querySelectorAll('[data-size]').forEach(btn=>{
+  btn.onclick=()=>{
+    lengthEl.value=btn.dataset.size;
+    len.textContent=btn.dataset.size;
+    document.querySelectorAll('[data-size]').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    generate();
+  };
+});
+
+/* Troca de categorias no topo */
+document.querySelectorAll('.nav button').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    document.querySelector('#tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='saved') renderSaved();
+  };
+});
+
+/* Cores rápidas */
+const quickColors=[
+  ['Roxo','#8b5cf6'],['Azul','#3b82f6'],['Ciano','#06b6d4'],['Verde','#22c55e'],
+  ['Amarelo','#eab308'],['Laranja','#f97316'],['Rosa','#ec4899'],['Vermelho','#ef4444']
+];
+const colorGrid=document.querySelector('#colorGrid');
+const wheel=document.querySelector('#wheel');
+const wheelDot=document.querySelector('#wheelDot');
+const colorPreview=document.querySelector('#colorPreview');
+
+function hexToRgb(hex){
+  const n=parseInt(hex.slice(1),16);
+  return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+}
+function applyColor(hex,save=true){
+  document.documentElement.style.setProperty('--accent',hex);
+  document.documentElement.style.setProperty('--accent2',hex);
+  const {r,g,b}=hexToRgb(hex);
+  const dark=`rgb(${Math.round(r*.16)},${Math.round(g*.16)},${Math.round(b*.16)})`;
+  document.documentElement.style.setProperty('--bg',dark);
+  document.documentElement.style.setProperty('--card',`rgb(${Math.round(r*.22)},${Math.round(g*.22)},${Math.round(b*.22)})`);
+  colorPreview.style.background=hex;
+  colorPreview.style.color=(r*.299+g*.587+b*.114)>150?'#111':'#fff';
+  colorPreview.textContent=hex.toUpperCase();
+  if(save)localStorage.setItem('accentColor',hex);
+  document.querySelectorAll('.colorChoice').forEach(x=>x.classList.toggle('active',x.dataset.color.toLowerCase()===hex.toLowerCase()));
+}
+
+quickColors.forEach(([name,color])=>{
+  const b=document.createElement('button');
+  b.className='colorChoice';
+  b.dataset.color=color;
+  b.title=name;
+  b.setAttribute('aria-label',name);
+  b.style.background=color;
+  b.onclick=()=>applyColor(color);
+  colorGrid.appendChild(b);
+});
+
+/* Seletor circular com pontinho arrastável */
+let hue=255;
+function hueToHex(h){
+  const s=1,l=.60;
+  const c=(1-Math.abs(2*l-1))*s;
+  const x=c*(1-Math.abs((h/60)%2-1));
+  const m=l-c/2;
+  let r=0,g=0,b=0;
+  if(h<60){r=c;g=x}
+  else if(h<120){r=x;g=c}
+  else if(h<180){g=c;b=x}
+  else if(h<240){g=x;b=c}
+  else if(h<300){r=x;b=c}
+  else {r=c;b=x}
+  return '#'+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('');
+}
+function setWheelFromPointer(clientX,clientY){
+  const rect=wheel.getBoundingClientRect();
+  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+  let angle=Math.atan2(clientY-cy,clientX-cx)*180/Math.PI+90;
+  if(angle<0)angle+=360;
+  hue=angle;
+  const rad=(rect.width/2)-14;
+  const a=(hue-90)*Math.PI/180;
+  const x=50+(Math.cos(a)*rad/rect.width)*100;
+  const y=50+(Math.sin(a)*rad/rect.height)*100;
+  wheelDot.style.left=x+'%';
+  wheelDot.style.top=y+'%';
+  applyColor(hueToHex(hue));
+}
+let dragging=false;
+wheel.addEventListener('pointerdown',e=>{dragging=true;wheel.setPointerCapture(e.pointerId);setWheelFromPointer(e.clientX,e.clientY)});
+wheel.addEventListener('pointermove',e=>{if(dragging)setWheelFromPointer(e.clientX,e.clientY)});
+wheel.addEventListener('pointerup',()=>dragging=false);
+wheel.addEventListener('pointercancel',()=>dragging=false);
+
+document.querySelector('#resetTheme').onclick=()=>{
+  hue=255;
+  applyColor('#8b5cf6');
+  localStorage.removeItem('accentColor');
+  const rect=wheel.getBoundingClientRect();
+  const rad=(rect.width/2)-14;
+  wheelDot.style.left='50%';
+  wheelDot.style.top=(50-rad/rect.height*100)+'%';
+};
+
+const savedColor=localStorage.getItem('accentColor');
+if(savedColor) applyColor(savedColor); else applyColor('#8b5cf6',false);
+renderSaved();
+generate();
+</script>
+</body>
+</html>
